@@ -6,7 +6,7 @@ import unittest
 
 from httmock import HTTMock
 from redisweeds.utils import Connection
-from redisweeds.weed import WeedFS
+from redisweeds.base import WeedFS
 
 
 def response_content(url, request):

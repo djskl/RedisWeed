@@ -8,7 +8,7 @@ import os
 import unittest
 
 from redisweeds.exceptions import BadFidFormat
-from redisweeds.weed import WeedFS
+from redisweeds.base import WeedFS
 
 
 class FunctionalTests(unittest.TestCase):

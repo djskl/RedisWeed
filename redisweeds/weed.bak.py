@@ -1,23 +1,45 @@
-from redisweeds.base import WeedFS
-from redisweeds.constants import REDIS_VOLUME_KEY
-from redisweeds.exceptions import RedisConnError
-from redisweeds.utils import redis_connect
+import io
+import os
+import redis
+import hashlib
+import StringIO
+from PIL import Image
+
+class WeedNotExists(IOError): pass
+class WeedDuplicate(ValueError): pass
+class WeedNoVolume(ValueError): pass
 
 
-class RedisWeed(WeedFS):
-    def __init__(self, redis_host="localhost", redis_port=6379,
-                 master_addr='localhost', master_port=9333, use_session=False):
-        super(self, RedisWeed).__init__(master_addr, master_port, use_session)
-        self.rdb = redis_connect(redis_host, redis_port)
-        if not self.rdb:
-            raise RedisConnError(redis_port, redis_port)
-        self.load_alive_volumes(self.rdb)
 
-    def load_alive_volumes(self, redis_conn):
-        vols = self.get_all_volumes()
-        if not vols:
-            return
-        redis_conn.sadd(REDIS_VOLUME_KEY, *vols)
+class RedisWeed(object):
+    def __init__(self, redis_host="127.0.0.1", redis_port=6379, weeds_host="127.0.0.1", weeds_port=9333):
+        self.rn = redis.StrictRedis(host=redis_host, port=redis_port)
+        self.wn = WeedFS(master_addr=weeds_host, master_port=weeds_port)
+
+    def get_key(self, filename):
+        if len(filename) > 32:
+            hb = hashlib.md5().update(filename)
+            return hb.hexdigest()
+        return filename
+
+    def save_to_http(self, filename, img_type="PNG"):
+        img_cnt = self.read(filename, img_type)
+        if not img_cnt:
+            raise WeedNotExists()
+        image_file = io.BytesIO(img_cnt)
+        img = Image.open(image_file)
+        imgs = StringIO.StringIO()
+        img.save(imgs, format=img_type)
+        imgs.seek(0)
+        return imgs.getvalue()
+
+    def save_to_disk(self, filename, dst_name, img_type="PNG"):
+        img_cnt = self.read(filename)
+        if not img_cnt:
+            raise WeedNotExists()
+        image_file = io.BytesIO(img_cnt)
+        img = Image.open(image_file)
+        img.save(dst_name, format=img_type)
 
     def get_volumeId(self):
         while self.rn.scard(REDIS_VOLUME_KEY) > 0:
