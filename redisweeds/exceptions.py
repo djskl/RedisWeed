@@ -9,13 +9,23 @@ class BadFidFormat(Exception):
     def __str__(self):
         return repr(self.value)
 
-class RedisConnError(Exception):
-
-    def __init__(self, host, port):
-        self.host, self.port = host, port
+class FileNotExists(Exception):
+    def __init__(self, filename):
+        self.filename = filename
 
     def __str__(self):
-        return "Can't connect to redis(host: {host}, port: {port})".format(
-            host = self.host,
-            port = self.port
-        )
+        return "No such file in the weed: '%s'"%self.filename
+
+
+class WeedDuplicateError(Exception):
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def __str__(self):
+        return "File: '%s' has existed"%self.filename
+
+
+class NullNotAllowed(Exception):
+    def __str__(self):
+        return "empty argument is not allowed"

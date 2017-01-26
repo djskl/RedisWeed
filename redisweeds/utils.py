@@ -6,6 +6,8 @@ to easeup communication with weed-fs
 import redis
 import hashlib
 import requests
+
+from redisweeds.exceptions import NullNotAllowed
 from redisweeds.version import __version__
 
 def make_weed_key(filename):
@@ -14,16 +16,14 @@ def make_weed_key(filename):
         return hb.hexdigest()
     return filename
 
-def redis_connect(redis_host="localhost", redis_port=6379):
-    _rdb = redis.StrictRedis(host=redis_host, port=redis_port)
-    try:
-        is_alive = _rdb.ping()
-    except redis.exceptions.ConnectionError:
-        return None
-
-    if is_alive:
-        return _rdb
-    return None
+def NotNullArgsRequired(func):
+    def _wrapper(*args, **kwargs):
+        t = reduce(lambda x, y: x and y, args)
+        if t:
+            return func(*args, **kwargs)
+        else:
+            raise NullNotAllowed()
+    return _wrapper
 
 class Connection(object):
 
@@ -153,24 +153,3 @@ class Connection(object):
             return True
         else:
             return False
-
-
-# def save_to_http(self, filename, img_type="PNG"):
-#     img_cnt = self.read(filename, img_type)
-#     if not img_cnt:
-#         raise WeedNotExists()
-#     image_file = io.BytesIO(img_cnt)
-#     img = Image.open(image_file)
-#     imgs = StringIO.StringIO()
-#     img.save(imgs, format=img_type)
-#     imgs.seek(0)
-#     return imgs.getvalue()
-#
-#
-# def save_to_disk(self, filename, dst_name, img_type="PNG"):
-#     img_cnt = self.read(filename)
-#     if not img_cnt:
-#         raise WeedNotExists()
-#     image_file = io.BytesIO(img_cnt)
-#     img = Image.open(image_file)
-#     img.save(dst_name, format=img_type)
