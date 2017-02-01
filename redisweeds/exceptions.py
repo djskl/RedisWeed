@@ -29,3 +29,6 @@ class WeedDuplicateError(Exception):
 class NullNotAllowed(Exception):
     def __str__(self):
         return "empty argument is not allowed"
+
+class WeedInternalError(Exception):
+    pass

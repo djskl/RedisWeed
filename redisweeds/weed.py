@@ -2,7 +2,7 @@
 import io, os
 import redis
 from redisweeds.base import WeedFS
-from redisweeds.exceptions import FileNotExists, WeedDuplicateError
+from redisweeds.exceptions import FileNotExists, WeedDuplicateError, WeedInternalError
 from redisweeds.utils import NotNullArgsRequired, make_weed_key
 
 
@@ -34,9 +34,12 @@ class RedisWeed(WeedFS):
         bytes_stream.seek(0)
 
         if timeout > 0:
-            fid = self.upload_file(name=filekey, stream=bytes_stream, ttl=timeout)
+            fid = self.upload_file(name=filekey, stream=bytes_stream, ttl="%sm"%str(timeout))
         else:
             fid = self.upload_file(name=filekey, stream=bytes_stream)
+
+        if not fid:
+            raise WeedInternalError()
 
         if timeout > 0:
             self.rdb.set(filekey, fid, ex=timeout*60)
