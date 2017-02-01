@@ -72,6 +72,7 @@ class RedisWeed(WeedFS):
         filekey = self.rdb.get(filename)
         if self.rdb.exists(filekey):
             self.delete_file(filekey)
+            self.rdb.delete(filekey)
             return True
         return False
 
