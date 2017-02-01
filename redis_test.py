@@ -1,4 +1,6 @@
 import unittest
+from time import sleep
+
 import redis
 from redisweeds.base import WeedFS
 from redisweeds.exceptions import FileNotExists, WeedDuplicateError
@@ -62,13 +64,25 @@ class TestWeedWrite(unittest.TestCase):
             self.rd.write(self.test_filename, self.test_cnt_2)
 
     def test_overwrite(self):
-
         self.rd.write(self.test_filename, self.test_cnt_1)
         self.rd.write(self.test_filename, self.test_cnt_2, True)
 
         ret = wfs.get_file(rconn.get(self.test_filekey))
         self.assertEqual(self.test_cnt_2, ret)
 
+    def test_timeout(self):
+        self.rd.write(self.test_filename, self.test_cnt_1, timeout=1)
+        ret = self.rd.read(self.test_filename)
+        self.assertEqual(ret, self.test_cnt_1)
+
+        fileid = rconn.get(self.test_filekey)
+        print "wait..."
+        sleep(60)
+
+        self.assertFalse(rconn.exists(self.test_filekey))
+        self.assertFalse(wfs.file_exists(fileid))
+
+        print "over"
 
 class TestWeedDelete(unittest.TestCase):
 
