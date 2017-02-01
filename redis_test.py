@@ -8,6 +8,32 @@ from redisweeds.weed import RedisWeed
 wfs = WeedFS()
 rconn = redis.StrictRedis()
 
+
+class TestWeedRead(unittest.TestCase):
+
+    def setUp(self):
+        self.rd = RedisWeed()
+        self.test_filename = "test_read_filename"
+        self.test_filekey = make_weed_key(self.test_filename)
+        self.test_cnt = "ces"
+
+        self.rd.write(self.test_filename, self.test_cnt)
+
+    def tearDown(self):
+        wfs.delete_file(rconn.get(self.test_filekey))
+        rconn.delete(self.test_filekey)
+
+    def test_read(self):
+        ret = self.rd.read(self.test_filename)
+        self.assertEqual(self.test_cnt, ret)
+
+    def test_read_no_exists(self):
+        with self.assertRaises(FileNotExists) as cm:
+            self.rd.read("no_exists_filename")
+
+        the_exception = cm.exception
+        self.assertEqual(the_exception.filename, "no_exists_filename")
+
 class TestWeedWrite(unittest.TestCase):
 
     def setUp(self):
@@ -44,30 +70,27 @@ class TestWeedWrite(unittest.TestCase):
         self.assertEqual(self.test_cnt_2, ret)
 
 
-class TestWeedRead(unittest.TestCase):
+class TestWeedDelete(unittest.TestCase):
 
     def setUp(self):
         self.rd = RedisWeed()
-        self.test_filename = "test_read_filename"
+        self.test_filename = "test_delete_filename"
         self.test_filekey = make_weed_key(self.test_filename)
         self.test_cnt = "ces"
 
         self.rd.write(self.test_filename, self.test_cnt)
 
-    def tearDown(self):
-        wfs.delete_file(rconn.get(self.test_filekey))
-        rconn.delete(self.test_filekey)
+    def test_delete(self):
+        self.assertTrue(rconn.exists(self.test_filekey))
+        fileid = rconn.get(self.test_filekey)
+        self.assertTrue(wfs.file_exists(fileid))
 
-    def test_read(self):
-        ret = self.rd.read(self.test_filename)
-        self.assertEqual(self.test_cnt, ret)
+        ret = self.rd.delete(self.test_filename)
 
-    def test_read_no_exists(self):
-        with self.assertRaises(FileNotExists) as cm:
-            self.rd.read("no_exists_filename")
+        self.assertTrue(ret)
 
-        the_exception = cm.exception
-        self.assertEqual(the_exception.filename, "no_exists_filename")
+        self.assertFalse(rconn.exists(self.test_filekey))
+        self.assertFalse(wfs.file_exists(fileid))
 
 
 if __name__ == "__main__":
