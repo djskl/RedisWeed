@@ -1,3 +1,5 @@
+#encoding: utf-8
+
 import unittest
 from time import sleep
 
@@ -70,20 +72,6 @@ class TestWeedWrite(unittest.TestCase):
         ret = wfs.get_file(rconn.get(self.test_filekey))
         self.assertEqual(self.test_cnt_2, ret)
 
-    def test_timeout(self):
-        self.rd.write(self.test_filename, self.test_cnt_1, timeout=1)
-        ret = self.rd.read(self.test_filename)
-        self.assertEqual(ret, self.test_cnt_1)
-
-        fileid = rconn.get(self.test_filekey)
-        print "wait..."
-        sleep(60)
-
-        self.assertFalse(rconn.exists(self.test_filekey))
-        self.assertFalse(wfs.file_exists(fileid))
-
-        print "over"
-
 class TestWeedDelete(unittest.TestCase):
 
     def setUp(self):
@@ -105,6 +93,45 @@ class TestWeedDelete(unittest.TestCase):
 
         self.assertFalse(rconn.exists(self.test_filekey))
         self.assertFalse(wfs.file_exists(fileid))
+
+class TestTimeOut(unittest.TestCase):
+
+    def setUp(self):
+        self.rd = RedisWeed()
+        self.test_filename = "test_timeout_filename"
+        self.test_filekey = make_weed_key(self.test_filename)
+        self.test_cnt = "ces"
+
+    def test_ttl_3s(self):
+        self.rd.write(self.test_filename, self.test_cnt, timeout=3)
+        self.assertTrue(rconn.exists("shadow:%s"%self.test_filekey))
+        self.assertTrue(rconn.exists(self.test_filekey))
+        fileid = rconn.get(self.test_filekey)
+        ret = wfs.get_file(fileid)
+        self.assertEqual(self.test_cnt, ret)
+
+        sleep(5)
+
+        self.assertFalse(rconn.exists("shadow:%s"%self.test_filekey))
+        self.assertFalse(rconn.exists(self.test_filekey))
+        ret = wfs.get_file(fileid)
+        self.assertIsNone(ret)
+
+
+    def test_ttl_1m(self):
+        self.rd.write(self.test_filename, self.test_cnt, timeout=60)
+        self.assertTrue(rconn.exists("shadow:%s" % self.test_filekey))
+        self.assertTrue(rconn.exists(self.test_filekey))
+        fileid = rconn.get(self.test_filekey)
+        ret = wfs.get_file(fileid)
+        self.assertEqual(self.test_cnt, ret)
+
+        sleep(65)
+
+        self.assertFalse(rconn.exists("shadow:%s" % self.test_filekey))
+        self.assertFalse(rconn.exists(self.test_filekey))
+        ret = wfs.get_file(fileid)
+        self.assertIsNone(ret)
 
 
 if __name__ == "__main__":
