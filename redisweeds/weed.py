@@ -33,16 +33,16 @@ class RedisWeed(WeedFS):
         bytes_stream.write(file_cnt)
         bytes_stream.seek(0)
 
-        if timeout > 0:
-            fid = self.upload_file(name=filekey, stream=bytes_stream, ttl="%sm"%str(timeout))
-        else:
-            fid = self.upload_file(name=filekey, stream=bytes_stream)
+        fid = self.upload_file(name=filekey, stream=bytes_stream)
 
         if not fid:
             raise WeedInternalError()
 
         if timeout > 0:
-            self.rdb.set(filekey, fid, ex=timeout*60)
+            #设置一个shadowkey是因为redis响应expire事件时不能将过期的key对应的值发送给响应函数
+            #需要处理函数通过这个shadowkey来间接获取
+            self.rdb.set("shadow:%s" % filekey, fid)
+            self.rdb.setex(filekey, timeout, fid)
         else:
             self.rdb.set(filekey, fid)
 
@@ -60,13 +60,11 @@ class RedisWeed(WeedFS):
         if self.rdb.exists(filekey) and overwrite:
             self.delete_file(filekey)
 
-        if timeout > 0:
-            fid = self.upload_file(path=filepath, name=filekey, ttl=timeout)
-        else:
-            fid = self.upload_file(path=filepath, name=filekey)
+        fid = self.upload_file(path=filepath, name=filekey)
 
         if timeout > 0:
-            self.rdb.set(filekey, fid, timeout*60)
+            self.rdb.set("shadow:%s" % filekey, fid)
+            self.rdb.setex(filekey, timeout, fid)
         else:
             self.rdb.set(filekey, fid)
 
