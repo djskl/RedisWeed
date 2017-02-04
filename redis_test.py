@@ -9,8 +9,8 @@ from redisweeds.exceptions import FileNotExists, WeedDuplicateError
 from redisweeds.utils import make_weed_key
 from redisweeds.weed import RedisWeed
 
-wfs = WeedFS()
-rconn = redis.StrictRedis()
+wfs = WeedFS("10.0.83.159")
+rconn = redis.StrictRedis("10.0.83.91")
 
 
 class TestWeedRead(unittest.TestCase):
@@ -97,7 +97,7 @@ class TestWeedDelete(unittest.TestCase):
 class TestTimeOut(unittest.TestCase):
 
     def setUp(self):
-        self.rd = RedisWeed()
+        self.rd = RedisWeed(redis_host="10.0.83.91", master_addr="10.0.83.159")
         self.test_filename = "test_timeout_filename"
         self.test_filekey = make_weed_key(self.test_filename)
         self.test_cnt = "ces"

@@ -1,4 +1,7 @@
+#!/usr/bin/python -u
 #encoding: utf-8
+
+import sys, getopt
 import redis
 import threading
 import gevent.select
@@ -8,9 +11,9 @@ from datetime import datetime
 from redisweeds.weed import RedisWeed
 
 REDIS_HOST = "127.0.0.1"
-REDIS_PORT = 6379
+REDIS_PORT = "6379"
 WEEDS_HOST = "127.0.0.1"
-WEEDS_PORT = 9333
+WEEDS_PORT = "9333"
 
 EXPIRE_EVENTS = "__keyevent@0__:expired"
 
@@ -36,7 +39,7 @@ class ExpireThread(threading.Thread):
             try:
                 fileid = conn.get("shadow:%s"%ex_key)
             except redis.exceptions.ConnectionError:
-                print "[%s]" % datetime.now().strftime("%m-%d %H:%M:%S"), "redis连接失败, 2秒后重试..."
+                print "[%s]" % datetime.now().strftime("%m-%d %H:%M:%S"), "redis连接失败(%s:%s), 2秒后重试..."%(REDIS_HOST, REDIS_PORT)
                 EXPIRE_KEYS.put(ex_key)
                 sleep(2)
                 continue
@@ -55,10 +58,10 @@ def createRedisChannel(wait_timeout=1):
         conn = redis.StrictRedis(REDIS_HOST, REDIS_PORT)
         chan = conn.pubsub()
         chan.subscribe(EXPIRE_EVENTS)
-        print "[%s]"%datetime.now().strftime("%m-%d %H:%M:%S"), "redis连接成功，HOST: %s, PORT: %d" %(REDIS_HOST, REDIS_PORT)
+        print "[%s]"%datetime.now().strftime("%m-%d %H:%M:%S"), "redis连接成功(%s:%s)"%(REDIS_HOST, REDIS_PORT)
         return chan
     except redis.exceptions.ConnectionError:
-        print "[%s]"%datetime.now().strftime("%m-%d %H:%M:%S"), "redis连接失败, 第%d次重新连接..."%wait_timeout
+        print "[%s]"%datetime.now().strftime("%m-%d %H:%M:%S"), "redis连接失败(%s:%s), 第%d次重新连接..."%(REDIS_HOST, REDIS_PORT, wait_timeout)
         sleep(wait_timeout)
         return createRedisChannel(wait_timeout+1)
 
@@ -78,7 +81,31 @@ def listenExpireEvent():
 
 
 if __name__ == "__main__":
+    argv = sys.argv[1:]
+
+    opts, args = getopt.getopt(argv, "a:b:c:d:", [
+        "redis-addr=",
+        "redis-port=",
+        "weeds-addr=",
+        "weeds-port="
+    ])
+
+    if len(opts) != 4:
+        print "listen_expire --redis-addr=<redis_addr> --redis-port=<redis_port> --weeds-addr=<weeds_addr> --weeds-port=<weeds_port>"
+        sys.exit(1)
+
+    for opt, arg in opts:
+        if opt in ("-a", "--redis-addr"):
+            REDIS_HOST = arg
+        elif opt in ("-b", "--redis-port"):
+            REDIS_PORT = arg
+        elif opt in ("-c", "--weeds-addr"):
+            WEEDS_ADDR = arg
+        elif opt in ("-d", "--weeds-port"):
+            WEEDS_PORT = arg
+
     for _ in range(3):
         ExpireThread().start()
 
-    listenExpireEvent()
+    print "[%s]"%datetime.now().strftime("%m-%d %H:%M:%S"), "监听服务已启动..."
+    listenExpireEvent() 
