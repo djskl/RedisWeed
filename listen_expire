@@ -100,7 +100,7 @@ if __name__ == "__main__":
         elif opt in ("-b", "--redis-port"):
             REDIS_PORT = arg
         elif opt in ("-c", "--weeds-addr"):
-            WEEDS_ADDR = arg
+            WEEDS_HOST = arg
         elif opt in ("-d", "--weeds-port"):
             WEEDS_PORT = arg
 

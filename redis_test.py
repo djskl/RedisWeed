@@ -9,14 +9,17 @@ from redisweeds.exceptions import FileNotExists, WeedDuplicateError
 from redisweeds.utils import make_weed_key
 from redisweeds.weed import RedisWeed
 
-wfs = WeedFS("10.0.83.159")
-rconn = redis.StrictRedis("10.0.83.91")
+WEEDS_HOST = "10.0.83.159"
+REDIS_HOST = "10.0.83.91"
+
+wfs = WeedFS(WEEDS_HOST)
+rconn = redis.StrictRedis(REDIS_HOST)
 
 
 class TestWeedRead(unittest.TestCase):
 
     def setUp(self):
-        self.rd = RedisWeed()
+        self.rd = RedisWeed(redis_host=REDIS_HOST, master_addr=WEEDS_HOST)
         self.test_filename = "test_read_filename"
         self.test_filekey = make_weed_key(self.test_filename)
         self.test_cnt = "ces"
@@ -41,7 +44,7 @@ class TestWeedRead(unittest.TestCase):
 class TestWeedWrite(unittest.TestCase):
 
     def setUp(self):
-        self.rd = RedisWeed()
+        self.rd = RedisWeed(redis_host=REDIS_HOST, master_addr=WEEDS_HOST)
         self.test_filename = "test_write_filename"
         self.test_filekey = make_weed_key(self.test_filename)
         self.test_cnt_1 = "ces1"
@@ -75,7 +78,7 @@ class TestWeedWrite(unittest.TestCase):
 class TestWeedDelete(unittest.TestCase):
 
     def setUp(self):
-        self.rd = RedisWeed()
+        self.rd = RedisWeed(redis_host=REDIS_HOST, master_addr=WEEDS_HOST)
         self.test_filename = "test_delete_filename"
         self.test_filekey = make_weed_key(self.test_filename)
         self.test_cnt = "ces"
@@ -97,7 +100,7 @@ class TestWeedDelete(unittest.TestCase):
 class TestTimeOut(unittest.TestCase):
 
     def setUp(self):
-        self.rd = RedisWeed(redis_host="10.0.83.91", master_addr="10.0.83.159")
+        self.rd = RedisWeed(redis_host=REDIS_HOST, master_addr=WEEDS_HOST)
         self.test_filename = "test_timeout_filename"
         self.test_filekey = make_weed_key(self.test_filename)
         self.test_cnt = "ces"
@@ -112,24 +115,8 @@ class TestTimeOut(unittest.TestCase):
 
         sleep(5)
 
+        self.assertFalse(rconn.exists(self.test_filekey))
         self.assertFalse(rconn.exists("shadow:%s"%self.test_filekey))
-        self.assertFalse(rconn.exists(self.test_filekey))
-        ret = wfs.get_file(fileid)
-        self.assertIsNone(ret)
-
-
-    def test_ttl_1m(self):
-        self.rd.write(self.test_filename, self.test_cnt, timeout=60)
-        self.assertTrue(rconn.exists("shadow:%s" % self.test_filekey))
-        self.assertTrue(rconn.exists(self.test_filekey))
-        fileid = rconn.get(self.test_filekey)
-        ret = wfs.get_file(fileid)
-        self.assertEqual(self.test_cnt, ret)
-
-        sleep(65)
-
-        self.assertFalse(rconn.exists("shadow:%s" % self.test_filekey))
-        self.assertFalse(rconn.exists(self.test_filekey))
         ret = wfs.get_file(fileid)
         self.assertIsNone(ret)
 
