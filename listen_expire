@@ -105,7 +105,9 @@ if __name__ == "__main__":
             WEEDS_PORT = arg
 
     for _ in range(3):
-        ExpireThread().start()
+        _et = ExpireThread()
+        _et.setDaemon(True)
+        _et.start()
 
     print "[%s]"%datetime.now().strftime("%m-%d %H:%M:%S"), "监听服务已启动..."
     listenExpireEvent() 
