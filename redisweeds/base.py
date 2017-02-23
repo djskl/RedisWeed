@@ -154,7 +154,6 @@ class WeedFS(object):
         :param string stream:
         :param string name:
         :rtype: string or None
-
         """
         params = "&".join(["%s=%s" % (k, v) for k, v in kwargs.items()])
         url = "http://{master_addr}:{master_port}/dir/assign{params}".format(

@@ -74,7 +74,7 @@ def listenExpireEvent():
         if expire_fd in ready[0]:
             try:
                 msg = chan.get_message()
-                if msg.get("type")=="message" and msg.get("channel")=="__keyevent@0__:expired":
+                if msg.get("type")=="message" and msg.get("channel")==EXPIRE_EVENTS:
                     EXPIRE_KEYS.put(msg.get("data"))
             except redis.exceptions.ConnectionError:
                 listenExpireEvent()
@@ -90,9 +90,9 @@ if __name__ == "__main__":
         "weeds-port="
     ])
 
-    if len(opts) != 4:
-        print "listen_expire --redis-addr=<redis_addr> --redis-port=<redis_port> --weeds-addr=<weeds_addr> --weeds-port=<weeds_port>"
-        sys.exit(1)
+    # if len(opts) != 4:
+    #     print "listen_expire --redis-addr=<redis_addr> --redis-port=<redis_port> --weeds-addr=<weeds_addr> --weeds-port=<weeds_port>"
+    #     sys.exit(1)
 
     for opt, arg in opts:
         if opt in ("-a", "--redis-addr"):

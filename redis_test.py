@@ -9,8 +9,8 @@ from redisweeds.exceptions import FileNotExists, WeedDuplicateError
 from redisweeds.utils import make_weed_key
 from redisweeds.weed import RedisWeed
 
-WEEDS_HOST = "10.0.83.159"
-REDIS_HOST = "10.0.83.91"
+WEEDS_HOST = "10.0.138.155"
+REDIS_HOST = "10.0.138.155"
 
 wfs = WeedFS(WEEDS_HOST)
 rconn = redis.StrictRedis(REDIS_HOST)
@@ -113,9 +113,10 @@ class TestTimeOut(unittest.TestCase):
         ret = wfs.get_file(fileid)
         self.assertEqual(self.test_cnt, ret)
 
-        sleep(5)
+        sleep(3)
 
         self.assertFalse(rconn.exists(self.test_filekey))
+        sleep(1)
         self.assertFalse(rconn.exists("shadow:%s"%self.test_filekey))
         ret = wfs.get_file(fileid)
         self.assertIsNone(ret)
